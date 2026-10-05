@@ -1,0 +1,93 @@
+# Console do Gateway LLM: SPA + proxy da API (console em /api e rotas OpenAI em /v1).
+# Variável substituída pelo envsubst da imagem oficial do nginx:
+#   LLMGW_API_UPSTREAM  (padrão http://gateway-api:8000)
+#
+# Com este proxy, o mesmo endereço serve o console e a API compatível com a OpenAI
+# (LLMGW_PUBLIC_URL aponta para cá).
+
+server {
+    listen 8080;
+    listen [::]:8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    server_tokens off;
+    # Mensagens com imagens em base64 podem ser grandes (o gateway limita em LLMGW_MAX_REQUEST_MB).
+    client_max_body_size 50m;
+
+    gzip on;
+    gzip_vary on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_types text/plain text/css text/csv application/json application/javascript text/javascript image/svg+xml;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
+
+    # ------------------------------------------------------------ API do console e rotas OpenAI
+    # Respostas em streaming (SSE): sem buffer e com tempo longo para gerações demoradas.
+    location /api/ {
+        proxy_pass ${LLMGW_API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection '';
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 15m;
+        proxy_send_timeout 15m;
+    }
+
+    location /v1/ {
+        proxy_pass ${LLMGW_API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection '';
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 15m;
+        proxy_send_timeout 15m;
+    }
+
+    # ------------------------------------------------------------ Saúde do container
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # ------------------------------------------------------------ Estáticos com hash: cache longo
+    location /assets/ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+        access_log off;
+    }
+
+    location ~* \.(?:svg|png|ico|woff2?)$ {
+        try_files $uri =404;
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800";
+        access_log off;
+    }
+
+    # ------------------------------------------------------------ SPA: rotas do React caem no index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+    }
+}

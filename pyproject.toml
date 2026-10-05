@@ -1,0 +1,44 @@
+# Workspace uv do gateway. Cada membro pode virar um repositório próprio sem
+# mudança de código (mesmo arranjo do Orquestrador).
+[tool.uv.workspace]
+members = ["gateway-api"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "ruff>=0.8",
+    "asgi-lifespan>=2.1.0",
+    "openai>=1.60",
+]
+ui = [
+    "playwright>=1.57,<2",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["gateway-console"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+ignore = ["B008", "UP046"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/migrations/versions/*.py" = ["E501"]
+"**/settings.py" = ["E501"]
+"**/tests/*.py" = ["ASYNC", "E731", "E501"]
+"**/devtools/*.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["llmgw"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+filterwarnings = [
+    # ldap3 usa nomes antigos do pyasn1
+    "ignore:tagMap is deprecated:DeprecationWarning",
+    "ignore:typeMap is deprecated:DeprecationWarning",
+]

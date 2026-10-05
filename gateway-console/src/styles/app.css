@@ -1,0 +1,173 @@
+/* Estilos próprios do console do gateway (prefixo gw-); o resto vem da broto-ui. */
+
+:root {
+  --bt-font-display: 'Exo 2 Variable', 'Nunito Variable', system-ui, sans-serif;
+  --bt-font-ui: 'Nunito Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.gw-toolbar {
+  flex-wrap: wrap;
+}
+
+/* Gasto do mês na barra superior */
+.gw-budget {
+  display: grid;
+  grid-template-columns: auto;
+  gap: 2px;
+  min-width: 180px;
+  padding: 6px 12px;
+  border: 1px solid var(--bt-border-soft);
+  border-radius: 0 10px 10px 10px;
+  background: var(--bt-surface);
+}
+.gw-budget-label {
+  font-size: 11px;
+  color: var(--bt-text-3);
+}
+.gw-budget-value {
+  font-family: var(--bt-font-display);
+  font-style: italic;
+  font-weight: 600;
+  color: var(--bt-title);
+  font-size: 14px;
+}
+@media (max-width: 720px) {
+  .gw-budget {
+    display: none;
+  }
+}
+
+/* Endereço da API com botão de copiar */
+.gw-endpoint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.gw-endpoint-url {
+  font-family: var(--bt-font-mono);
+  font-size: 13.5px;
+  padding: 8px 12px;
+  background: var(--bt-green-50);
+  color: var(--bt-green-900);
+  border-radius: 0 8px 8px 8px;
+  word-break: break-all;
+}
+
+/* Linhas desabilitadas/revogadas */
+.gw-row-muted td {
+  color: var(--bt-text-3);
+}
+
+/* Escolha de modelos (chaves e usuários) */
+.gw-model-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 16px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--bt-border-soft);
+  border-radius: 0 8px 8px 8px;
+}
+.gw-model-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.gw-model-option input {
+  accent-color: var(--bt-primary);
+}
+
+.gw-tab-body {
+  padding: 16px 20px 20px;
+}
+
+/* Playground */
+.gw-playground {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .gw-playground {
+    grid-template-columns: 1fr;
+  }
+}
+.gw-chat {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+  max-height: calc(100vh - 240px);
+}
+.gw-chat-log {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gw-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 82%;
+}
+.gw-turn-user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.gw-turn-assistant {
+  align-self: flex-start;
+}
+.gw-bubble {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 10px 14px;
+  line-height: 1.5;
+  border-radius: 0 14px 14px 14px;
+  background: var(--bt-surface-muted);
+  border: 1px solid var(--bt-border-soft);
+}
+.gw-turn-user .gw-bubble {
+  background: var(--bt-green-700);
+  border-color: var(--bt-green-700);
+  color: #fff;
+  border-radius: 14px 0 14px 14px;
+}
+.gw-turn-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--bt-text-3);
+}
+.gw-composer {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 14px 16px;
+  border-top: 1px solid var(--bt-border-soft);
+  background: var(--bt-surface);
+}
+.gw-composer textarea {
+  flex: 1 1 auto;
+}
+
+.gw-link {
+  color: var(--bt-link);
+  font-weight: 600;
+}
+
+/* Celular: indicadores em uma coluna (valores em dólar não cabem em duas). */
+@media (max-width: 520px) {
+  .bt-grid-kpi-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

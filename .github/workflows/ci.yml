@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python (lint, migrações e testes)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: llmgw
+          POSTGRES_PASSWORD: llmgw
+          POSTGRES_DB: llmgw
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U llmgw" --health-interval 5s --health-retries 20
+      redis:
+        image: redis:8-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-retries 20
+    env:
+      LLMGW_TEST_DATABASE_URL: postgresql://llmgw:llmgw@localhost:5432/llmgw_test
+      LLMGW_TEST_REDIS_URL: redis://localhost:6379/15
+      LLMGW_TEST_LDAP_URL: ldap://localhost:3389
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: OpenLDAP de desenvolvimento (usuários e grupos de exemplo)
+        run: |
+          docker build -t llmgw-ldap:ci dev/ldap
+          docker run -d --name ldap -p 3389:389 llmgw-ldap:ci
+      - name: Banco de teste
+        run: PGPASSWORD=llmgw psql -h localhost -U llmgw -d llmgw -c "create database llmgw_test"
+      - name: Dependências
+        run: uv sync --all-packages --frozen
+      - name: Lint e formatação
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Migrações em sincronia com os modelos
+        working-directory: gateway-api
+        env:
+          LLMGW_DATABASE_URL: postgresql://llmgw:llmgw@localhost:5432/llmgw
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+      - name: Espera o LDAP
+        run: timeout 120 sh -c 'until [ "$(docker inspect -f "{{.State.Health.Status}}" ldap)" = healthy ]; do sleep 2; done'
+      - name: Testes (API, Foundry simulado, Vault simulado, Redis e LDAP reais)
+        run: uv run pytest gateway-api/tests -q
+
+  console:
+    name: Console (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gateway-console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: gateway-console/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  images:
+    name: Imagem ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    needs: [python, console]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {project: gateway-api, context: ., file: gateway-api/Dockerfile}
+          - {project: gateway-console, context: gateway-console, file: gateway-console/Dockerfile}
+          - {project: ldap-dev, context: dev/ldap, file: dev/ldap/Dockerfile}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: false
+          tags: llmgw-${{ matrix.project }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.project }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.project }}
+
+  ui-e2e:
+    name: Interface ponta a ponta (compose + Playwright)
+    runs-on: ubuntu-latest
+    needs: [python, console]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Sobe a pilha completa
+        run: docker compose up -d --build
+      - name: Espera API e console
+        run: |
+          timeout 300 sh -c 'until curl -sf localhost:8000/readyz >/dev/null; do sleep 3; done'
+          timeout 120 sh -c 'until curl -sf localhost:8090/api/v1/config >/dev/null; do sleep 3; done'
+      - name: Dependências e navegador
+        run: |
+          uv sync --all-packages --frozen --group ui
+          uv run playwright install --with-deps chromium
+      - name: Dados de demonstração
+        run: uv run python scripts/demo.py --chamadas 15
+      - name: Teste da interface
+        env:
+          LLMGW_UI_URL: http://localhost:8090
+          LLMGW_UI_SCREENSHOTS: ui-screenshots
+        run: uv run pytest tests/ui -v
+      - name: Prints das telas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prints-console
+          path: ui-screenshots/
+      - name: Logs dos serviços
+        if: failure()
+        run: docker compose logs --tail 200

@@ -1,0 +1,79 @@
+# Usuários e grupos de exemplo. Senha de todos os usuários: Senha@123
+# Conta de serviço do gateway: cn=leitor-gateway,ou=servicos,dc=exemplo,dc=org / leitor-senha
+dn: dc=exemplo,dc=org
+objectClass: dcObject
+objectClass: organization
+o: Exemplo
+dc: exemplo
+
+dn: ou=pessoas,dc=exemplo,dc=org
+objectClass: organizationalUnit
+ou: pessoas
+
+dn: ou=grupos,dc=exemplo,dc=org
+objectClass: organizationalUnit
+ou: grupos
+
+dn: ou=servicos,dc=exemplo,dc=org
+objectClass: organizationalUnit
+ou: servicos
+
+dn: cn=leitor-gateway,ou=servicos,dc=exemplo,dc=org
+objectClass: organizationalRole
+objectClass: simpleSecurityObject
+cn: leitor-gateway
+userPassword: leitor-senha
+description: Conta de serviço do gateway (somente leitura)
+
+dn: uid=ana,ou=pessoas,dc=exemplo,dc=org
+objectClass: inetOrgPerson
+uid: ana
+cn: Ana Souza
+sn: Souza
+displayName: Ana Souza
+mail: ana@exemplo.org
+userPassword: Senha@123
+
+dn: uid=bruno,ou=pessoas,dc=exemplo,dc=org
+objectClass: inetOrgPerson
+uid: bruno
+cn: Bruno Lima
+sn: Lima
+displayName: Bruno Lima
+mail: bruno@exemplo.org
+userPassword: Senha@123
+
+dn: uid=carla,ou=pessoas,dc=exemplo,dc=org
+objectClass: inetOrgPerson
+uid: carla
+cn: Carla Dias
+sn: Dias
+displayName: Carla Dias
+mail: carla@exemplo.org
+userPassword: Senha@123
+
+dn: uid=diego,ou=pessoas,dc=exemplo,dc=org
+objectClass: inetOrgPerson
+uid: diego
+cn: Diego Rocha
+sn: Rocha
+displayName: Diego Rocha
+mail: diego@exemplo.org
+userPassword: Senha@123
+
+dn: cn=llm-usuarios,ou=grupos,dc=exemplo,dc=org
+objectClass: groupOfNames
+cn: llm-usuarios
+member: uid=ana,ou=pessoas,dc=exemplo,dc=org
+member: uid=bruno,ou=pessoas,dc=exemplo,dc=org
+member: uid=diego,ou=pessoas,dc=exemplo,dc=org
+
+dn: cn=llm-admins,ou=grupos,dc=exemplo,dc=org
+objectClass: groupOfNames
+cn: llm-admins
+member: uid=bruno,ou=pessoas,dc=exemplo,dc=org
+
+dn: cn=dados,ou=grupos,dc=exemplo,dc=org
+objectClass: groupOfNames
+cn: dados
+member: uid=diego,ou=pessoas,dc=exemplo,dc=org
