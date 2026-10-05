@@ -40,18 +40,15 @@ Console em http://localhost:8090 (`ana`/`diego` usuários, `bruno` admin, senha 
 | ruff, `alembic check`, `tsc` e build do console | ✅ |
 | Nome da empresa no código, docs e pacote da broto-ui | ✅ nenhuma ocorrência |
 
-**Não verificado:** Azure real, Vault real, imagens Docker e o compose (sem Docker no ambiente; o CI faz isso), Active Directory (só OpenLDAP).
+**Não verificado:** Azure real, Vault real, Active Directory (só OpenLDAP).
 
 ## 4. Pendências
 
 ### 4.1 Antes do primeiro uso
 
-- [ ] **Mover o CI**: o arquivo veio em `ci/ci.yml` (a pasta `.github/workflows` não pôde ser gravada remotamente).
-  ```bash
-  mkdir -p .github/workflows && mv ci/ci.yml .github/workflows/ci.yml && rmdir ci
-  ```
-- [ ] **Subir o compose** e rodar `uv run pytest tests/ui` uma vez na sua máquina (primeira execução real das imagens).
-- [ ] **Criar o repositório no GitHub** e preencher o titular em `LICENSE` (hoje: "os autores do llm-gateway").
+- [x] **CI** movido para `.github/workflows/ci.yml`.
+- [x] **Compose e `tests/ui`** executados em 05/10/2026: imagens construídas, demo OK, 4 testes de interface passando. Portas do host configuráveis (`LLMGW_PG_PORT`, `LLMGW_API_PORT`, `LLMGW_CONSOLE_PORT`) e `ulimits` no OpenLDAP.
+- [x] **Repositório público** em https://github.com/edumartinsrib/llm-gateway; titular da `LICENSE` preenchido.
 - [ ] **Primeiro teste com Azure real**: chave do recurso + `deployments` fixos; depois service principal + descoberta pelo projeto. Conferir os papéis listados em `docs/operacao.md`.
 - [ ] **Preços reais** em cada modelo (os do `demo.py` são exemplos).
 - [ ] **Configurar na implantação**: `LLMGW_FORWARDED_ALLOW_IPS` (IP/CIDR do proxy), `LLMGW_PROVIDER_ALLOWED_HOSTS` (padrão: nuvens do Azure), `LLMGW_PROVIDER_VAULT_PREFIXES` (se a plataforma provisionar o segredo), grupos do LDAP por DN.

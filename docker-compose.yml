@@ -24,7 +24,7 @@ services:
       - pgdata:/var/lib/postgresql/data
     ports:
       # Só para o `demo.py --espalhar-dias`; não é usado pelos serviços.
-      - "55432:5432"
+      - "${LLMGW_PG_PORT:-55432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U llmgw -d llmgw"]
       interval: 5s
@@ -62,6 +62,9 @@ services:
   ldap:
     build: ./dev/ldap
     image: llmgw-ldap:dev
+    # slapd aborta (ch_calloc) com o nofile ilimitado padrão do Docker.
+    ulimits:
+      nofile: {soft: 1024, hard: 1024}
 
   fake-foundry:
     build: *api-build
@@ -110,7 +113,7 @@ services:
       ldap: {condition: service_healthy}
       fake-foundry: {condition: service_healthy}
     ports:
-      - "8000:8000"
+      - "${LLMGW_API_PORT:-8000}:8000"
 
   console:
     build: ./gateway-console
@@ -119,7 +122,7 @@ services:
       LLMGW_API_UPSTREAM: http://gateway-api:8000
     depends_on: [gateway-api]
     ports:
-      - "8090:8080"
+      - "${LLMGW_CONSOLE_PORT:-8090}:8080"
 
 volumes:
   pgdata:
